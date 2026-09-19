@@ -334,85 +334,62 @@ async function handleCompleteUpload(request: Request, env: Env, sessionId: strin
 		return new Response('Invalid session', { status: 400, headers: corsHeaders });
 	}
 
-	// Parse request body
-	const body: CompleteUploadRequest = await request.json();
-	const { fileIds, validityDays } = body;
-
-	// Validate fileIds
-	for (const fileId of fileIds) {
-		if (!isValidUUID(fileId)) {
-			return new Response('Invalid file ID format', { status: 400, headers: corsHeaders });
-		}
+	const jsonError = (error: string, status: number) =>
+		new Response(JSON.stringify({ error }), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+	let body: CompleteUploadRequest;
+	try {
+		body = await request.json();
+	} catch {
+		return jsonError('请求格式不正确。', 400);
 	}
-
-	// Generate unique retrieval code and calculate expiry
-	const retrievalCode = generateRetrievalCode();
+	if (!body || !Array.isArray(body.fileIds) || body.fileIds.length === 0 ||
+		body.fileIds.some((id) => typeof id !== 'string' || !isValidUUID(id)) ||
+		new Set(body.fileIds).size !== body.fileIds.length || ![1, 3, 7, 15, -1].includes(body.validityDays)) {
+		return jsonError('文件列表或有效期不正确。', 400);
+	}
+	if (body.customRetrievalCode !== undefined && typeof body.customRetrievalCode !== 'string') {
+		return jsonError('自定义取件码必须为文字。', 400);
+	}
+	const customCode = body.customRetrievalCode?.trim().toUpperCase() || '';
+	if (customCode && !isValidRetrievalCode(customCode)) {
+		return jsonError('取件码需为 6–32 位字母、数字、短横线或下划线。', 400);
+	}
+	const { fileIds, validityDays } = body;
+	// Validate ownership before publishing any content.
+	const owned = await env.DB.prepare(
+		`SELECT COUNT(*) as count FROM files WHERE file_id IN (${fileIds.map(() => '?').join(',')}) AND session_id = ?`,
+	).bind(...fileIds, sessionId).first<{ count: number }>();
+	if (owned?.count !== fileIds.length) {
+		return jsonError('文件不属于当前上传会话。', 400);
+	}
 	const expiryDate = calculateExpiry(validityDays);
-	const timestamp = getCurrentTimestamp();
-
-	// Batch all validation and update operations for better performance
-	const operations = [
-		// Validate file ownership
-		env.DB.prepare(
-			`
-			SELECT COUNT(*) as count FROM files 
-			WHERE file_id IN (${fileIds.map(() => '?').join(',')}) AND session_id = ?
-		`,
-		).bind(...fileIds, sessionId),
-
-		// Check retrieval code uniqueness
-		env.DB.prepare(
-			`
-			SELECT retrieval_code FROM sessions WHERE retrieval_code = ?
-		`,
-		).bind(retrievalCode),
-
-		// Update session (will only succeed if session exists and not completed)
-		env.DB.prepare(
-			`
-			UPDATE sessions 
+	for (let attempt = 0; attempt < (customCode ? 1 : 5); attempt++) {
+		const retrievalCode = customCode || generateRetrievalCode();
+		// The UNIQUE constraint reserves the code atomically, including concurrent requests.
+		// OR IGNORE leaves the session open on a conflict so the user can choose another code.
+		const result = await env.DB.prepare(`
+			UPDATE OR IGNORE sessions
 			SET retrieval_code = ?, upload_complete = TRUE, expiry_date = ?, updated_at = ?
 			WHERE session_id = ? AND upload_complete = FALSE
-		`,
-		).bind(retrievalCode, expiryDate, timestamp, sessionId),
-	];
-
-	const results = await env.DB.batch(operations);
-
-	// Validate results from batch operations
-	const fileCheckResult = results[0].results[0] as { count: number };
-	const retrievalCodeCheck = results[1].results[0];
-	const updateResult = results[2];
-
-	// Check if all files belong to this session
-	if (fileCheckResult.count !== fileIds.length) {
-		return new Response('Some files do not belong to this session', { status: 400, headers: corsHeaders });
+		`).bind(retrievalCode, expiryDate, getCurrentTimestamp(), sessionId).run();
+		if (result.meta.changes > 0) {
+			const response: CompleteUploadResponse = {
+				retrievalCode,
+				expiryDate: expiryDate ? new Date(expiryDate * 1000).toISOString() : null,
+			};
+			return new Response(JSON.stringify(response), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+		}
+		const session = await env.DB.prepare('SELECT session_id FROM sessions WHERE session_id = ? AND upload_complete = FALSE')
+			.bind(sessionId).first();
+		if (!session) return jsonError('上传会话不存在或已完成，请重新开始分享。', 404);
+		if (customCode) return jsonError('此取件码已被占用，请换一个后重试，已上传的文件会保留。', 409);
 	}
-
-	// Check for retrieval code collision
-	if (retrievalCodeCheck) {
-		// Retrieval code collision - in production, implement retry logic
-		return new Response('Failed to generate unique retrieval code', { status: 500, headers: corsHeaders });
-	}
-
-	// Check if session update was successful
-	if (updateResult.meta.changes === 0) {
-		return new Response('Session not found or already completed', { status: 404, headers: corsHeaders });
-	}
-
-	const response: CompleteUploadResponse = {
-		retrievalCode,
-		expiryDate: expiryDate ? new Date(expiryDate * 1000).toISOString() : null,
-	};
-
-	return new Response(JSON.stringify(response), {
-		status: 200,
-		headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-	});
+	return jsonError('暂时无法生成取件码，请重试。', 503);
 }
 
 // GET /api/retrieve/:retrievalCode - Get chest contents
 async function handleRetrieveChest(env: Env, retrievalCode: string, corsHeaders: Record<string, string>): Promise<Response> {
+	retrievalCode = retrievalCode.trim().toUpperCase();
 	if (!isValidRetrievalCode(retrievalCode)) {
 		return new Response('Invalid retrieval code format', { status: 400, headers: corsHeaders });
 	}

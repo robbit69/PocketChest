@@ -1,5 +1,5 @@
 import { errorMessage } from '@/lib/error-message';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { PocketChestAPI } from '@/lib/api';
 import { TextItem, ValidityDays, MultipartUploadProgress, FileUploadProgress } from '@/lib/types';
 
@@ -12,7 +12,13 @@ export function usePocketChest() {
   const [fileProgress, setFileProgress] = useState<FileUploadProgress[]>([]);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   
-  const api = new PocketChestAPI();
+  const api = useMemo(() => new PocketChestAPI(), []);
+  const pendingUpload = useRef<{
+    sessionId: string;
+    uploadedFiles: { fileId: string; filename: string; isText: boolean }[];
+    total: number;
+  } | null>(null);
+  const [hasUploadedContent, setHasUploadedContent] = useState(false);
   
   const upload = useCallback(async (
     files: File[],
@@ -107,7 +113,8 @@ export function usePocketChest() {
     uploadToken: string,
     files: File[],
     textItems: TextItem[],
-    validityDays: ValidityDays = 7
+    validityDays: ValidityDays = 7,
+    customRetrievalCode?: string
   ) => {
     // Create new abort controller for this upload session
     const controller = new AbortController();
@@ -122,20 +129,27 @@ export function usePocketChest() {
     try {
       let finalProgress = { percentage: 0, loaded: 0, total: 0 };
       
-      const { uploadedFiles } = await api.uploadContent(
-        sessionId,
-        uploadToken,
-        files,
-        textItems,
-        (progress) => {
-          finalProgress = progress;
-          setUploadProgress(progress);
-        },
-        (fileProgressList) => {
-          setFileProgress(fileProgressList);
-        }
-      );
-      
+      if (pendingUpload.current?.sessionId !== sessionId) {
+        const { uploadedFiles } = await api.uploadContent(
+          sessionId,
+          uploadToken,
+          files,
+          textItems,
+          (progress) => {
+            finalProgress = progress;
+            setUploadProgress(progress);
+          },
+          (fileProgressList) => {
+            setFileProgress(fileProgressList);
+          }
+        );
+
+        pendingUpload.current = { sessionId, uploadedFiles, total: finalProgress.total };
+        setHasUploadedContent(true);
+      }
+      const { uploadedFiles, total } = pendingUpload.current!;
+      // Retry finalization without uploading the content again after a code conflict.
+      finalProgress = { percentage: 100, loaded: total, total };
       // Upload complete, now finalizing
       setUploadProgress({ percentage: 100, loaded: finalProgress.total, total: finalProgress.total });
       
@@ -144,9 +158,12 @@ export function usePocketChest() {
         sessionId,
         uploadToken,
         fileIds,
-        validityDays
+        validityDays,
+        customRetrievalCode
       );
       
+      pendingUpload.current = null;
+      setHasUploadedContent(false);
       setUploadStatus('success');
       setAbortController(null); // Clear abort controller on success
       
@@ -170,7 +187,8 @@ export function usePocketChest() {
     uploadToken: string,
     files: File[],
     textItems: TextItem[],
-    validityDays: ValidityDays = 7
+    validityDays: ValidityDays = 7,
+    customRetrievalCode?: string
   ) => {
     // Reset state completely before retry
     if (abortController) {
@@ -183,7 +201,7 @@ export function usePocketChest() {
     setUploadProgress({ percentage: 0, loaded: 0, total: 0 });
     setFileProgress([]);
     
-    return uploadWithSession(sessionId, uploadToken, files, textItems, validityDays);
+    return uploadWithSession(sessionId, uploadToken, files, textItems, validityDays, customRetrievalCode);
   }, [uploadWithSession, abortController]);
 
   const cancelUpload = useCallback(() => {
@@ -209,6 +227,7 @@ export function usePocketChest() {
     retrieve,
     downloadSingleFile,
     isUploading,
+    hasUploadedContent,
     isRetrieving,
     error,
     uploadProgress,

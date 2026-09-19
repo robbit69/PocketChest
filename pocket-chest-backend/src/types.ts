@@ -73,6 +73,7 @@ export interface CompleteMultipartUploadResponse {
 }
 
 export interface CompleteUploadRequest {
+	customRetrievalCode?: string;
 	fileIds: string[];
 	validityDays: number; // 1, 3, 7, 15, or -1 for permanent
 }

@@ -10,6 +10,7 @@ import { UploadProgress } from '@/components/UploadProgress';
 import { usePocketChest } from '@/hooks/usePocketChest';
 import { errorMessage } from '@/lib/error-message';
 import { PocketChestAPI } from '@/lib/api';
+import { isValidRetrievalCode, retrievalCodeHint } from '@/lib/retrieval-code';
 import { TextItem, ValidityDays } from '@/lib/types';
 
 export default function SharePage() {
@@ -17,6 +18,8 @@ export default function SharePage() {
   const [textItems, setTextItems] = useState<TextItem[]>([]);
   const [validityDays, setValidityDays] = useState<ValidityDays>(7);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
+  const [customRetrievalCode, setCustomRetrievalCode] = useState('');
+  const invalidCustomCode = customRetrievalCode.trim() !== '' && !isValidRetrievalCode(customRetrievalCode);
   const [copied, setCopied] = useState(false);
   
   // Authentication state
@@ -34,7 +37,8 @@ export default function SharePage() {
     uploadWithSession, 
     retryUpload, 
     cancelUpload, 
-    isUploading, 
+    isUploading,
+    hasUploadedContent,
     uploadProgress, 
     uploadStatus, 
     fileProgress,
@@ -101,6 +105,7 @@ export default function SharePage() {
   };
 
   const handleUpload = async () => {
+    if (invalidCustomCode) return;
     if (files.length === 0 && textItems.length === 0) {
       alert('请先添加要分享的文件或文字');
       return;
@@ -125,7 +130,8 @@ export default function SharePage() {
         sessionData.uploadToken,
         files,
         textItems,
-        validityDays
+        validityDays,
+        customRetrievalCode.trim().toUpperCase()
       );
       setUploadResult(result.retrievalCode);
       setFiles([]);
@@ -137,6 +143,7 @@ export default function SharePage() {
   };
 
   const handleRetry = async () => {
+    if (invalidCustomCode) return;
     if (!sessionData) return;
     
     try {
@@ -145,7 +152,8 @@ export default function SharePage() {
         sessionData.uploadToken,
         files,
         textItems,
-        validityDays
+        validityDays,
+        customRetrievalCode.trim().toUpperCase()
       );
       setUploadResult(result.retrievalCode);
       setFiles([]);
@@ -240,7 +248,7 @@ export default function SharePage() {
               <div className="bg-gray-50 rounded-lg p-6 mb-8">
                 <p className="text-sm text-gray-600 mb-3 font-medium">分享此取件码：</p>
                 <div className="flex items-center justify-center gap-3 mb-4">
-                  <code className="text-3xl font-mono font-bold text-blue-600 bg-white px-6 py-3 rounded-lg border-2 border-blue-200">
+                  <code className="text-3xl break-all font-mono font-bold text-blue-600 bg-white px-6 py-3 rounded-lg border-2 border-blue-200">
                     {uploadResult}
                   </code>
                   <button
@@ -263,8 +271,7 @@ export default function SharePage() {
               <div className="space-y-3">
                 <button
                   onClick={() => {
-                    setUploadResult(null);
-                    clearError();
+                    window.location.reload();
                   }}
                   className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold"
                 >
@@ -321,6 +328,7 @@ export default function SharePage() {
 
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="space-y-8">
+            <fieldset disabled={isUploading || hasUploadedContent} className="space-y-8 disabled:opacity-60">
             {/* Text Section */}
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">📝 文字内容</h2>
@@ -333,11 +341,33 @@ export default function SharePage() {
               <FileUpload files={files} onFilesChange={setFiles} />
             </div>
             
+            </fieldset>
+            {hasUploadedContent && <p className="text-sm text-blue-700">文件已上传。可修改取件码或有效期后重试，无需重新上传。</p>}
             <ExpirySelector value={validityDays} onChange={setValidityDays} />
             
+            <div>
+              <label htmlFor="custom-retrieval-code" className="block text-sm font-medium text-gray-700 mb-2">自定义取件码（可选）</label>
+              <input
+                id="custom-retrieval-code"
+                value={customRetrievalCode}
+                onChange={(event) => setCustomRetrievalCode(event.target.value.toUpperCase())}
+                disabled={isUploading}
+                maxLength={32}
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={invalidCustomCode}
+                aria-describedby="custom-code-hint"
+                placeholder="例如 MY-FILES_2026，留空自动生成"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+              <p id="custom-code-hint" className={`text-sm mt-2 ${invalidCustomCode ? 'text-red-600' : 'text-gray-500'}`}>
+                {retrievalCodeHint}。留空自动生成；取件码不可重复。
+              </p>
+            </div>
             <button
               onClick={handleUpload}
-              disabled={isUploading || (files.length === 0 && textItems.length === 0)}
+              disabled={isUploading || invalidCustomCode || (files.length === 0 && textItems.length === 0)}
               className="w-full py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-lg"
             >
               {isUploading ? (

@@ -1,7 +1,7 @@
 -- Sessions table: tracks upload sessions and their state
 CREATE TABLE IF NOT EXISTS sessions (
     session_id TEXT PRIMARY KEY,           -- UUID v4
-    retrieval_code TEXT UNIQUE,            -- 6-char alphanumeric (A-Z, 0-9)
+    retrieval_code TEXT UNIQUE,            -- 6-32 characters (A-Z, 0-9, _, -)
     upload_complete BOOLEAN DEFAULT FALSE,
     expiry_date INTEGER,                   -- Unix timestamp
     created_at INTEGER DEFAULT (strftime('%s', 'now')),

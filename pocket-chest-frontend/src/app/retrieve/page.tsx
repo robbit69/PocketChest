@@ -3,11 +3,12 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { isValidRetrievalCode, retrievalCodeHint } from '@/lib/retrieval-code';
 import { RetrieveClient } from '@/components/RetrieveClient';
 
 function RetrievePageContent() {
   const searchParams = useSearchParams();
-  const codeFromUrl = searchParams.get('code');
+  const codeFromUrl = searchParams.get('code')?.trim().toUpperCase();
   const [retrievalCode, setRetrievalCode] = useState(codeFromUrl || '');
   const [showFiles, setShowFiles] = useState(!!codeFromUrl);
 
@@ -19,20 +20,21 @@ function RetrievePageContent() {
   }, [codeFromUrl]);
 
   const handleRetrieve = () => {
-    const code = retrievalCode.trim();
+    const code = retrievalCode.trim().toUpperCase();
     if (!code) {
       alert('请输入取件码');
       return;
     }
     
-    if (code.length !== 6) {
-      alert('取件码必须为 6 位字符');
+    if (!isValidRetrievalCode(code)) {
+      alert(retrievalCodeHint);
       return;
     }
     
     // Update URL and show files
-    const newUrl = `/retrieve?code=${code}`;
+    const newUrl = `/retrieve?code=${encodeURIComponent(code)}`;
     window.history.pushState({}, '', newUrl);
+    setRetrievalCode(code);
     setShowFiles(true);
   };
 
@@ -62,7 +64,7 @@ function RetrievePageContent() {
           <div className="text-8xl mb-6 mt-4">📥</div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">提取文件</h1>
           <p className="text-xl text-gray-600">
-            输入 6 位取件码，查看并下载分享内容
+            输入取件码，查看并下载分享内容
           </p>
         </div>
 
@@ -78,25 +80,24 @@ function RetrievePageContent() {
                 onChange={(e) => setRetrievalCode(e.target.value.toUpperCase())}
                 onKeyPress={handleKeyPress}
                 placeholder="A1B2C3"
-                maxLength={6}
+                maxLength={32}
                 className="w-full p-4 text-center text-2xl font-mono font-bold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
               />
               <div className="flex justify-between items-center mt-2">
                 <p className="text-xs text-gray-500">
-                  输入由字母和数字组成的 6 位取件码
+                  {retrievalCodeHint}
                 </p>
                 <p className={`text-xs ${
-                  retrievalCode.length === 6 ? 'text-green-600' : 
-                  retrievalCode.length > 6 ? 'text-red-600' : 'text-gray-400'
+                  isValidRetrievalCode(retrievalCode) ? 'text-green-600' : 'text-gray-400'
                 }`}>
-                  {retrievalCode.length}/6
+                  {retrievalCode.length}/32
                 </p>
               </div>
             </div>
             
             <button
               onClick={handleRetrieve}
-              disabled={!retrievalCode.trim() || retrievalCode.trim().length !== 6}
+              disabled={!isValidRetrievalCode(retrievalCode)}
               className="w-full py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-lg transition-colors"
             >
               提取文件
@@ -117,7 +118,7 @@ function RetrievePageContent() {
           <div className="bg-white rounded-lg p-4 shadow-sm">
             <h3 className="font-medium text-gray-900 mb-2">使用方法：</h3>
             <div className="text-sm text-gray-600 space-y-1">
-              <p>• 输入收到的 6 位取件码</p>
+              <p>• 输入收到的取件码（支持自定义码）</p>
               <p>• 查看文字并下载分享的文件</p>
               <p>• 文件将在设定的有效期后过期</p>
             </div>

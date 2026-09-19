@@ -13,7 +13,8 @@
 		"lint": "eslint . --ext .ts,.js",
 		"lint:fix": "eslint . --ext .ts,.js --fix",
 		"format": "prettier --write .",
-		"format:check": "prettier --check ."
+		"format:check": "prettier --check .",
+		"test:custom-code": "wrangler deploy --dry-run --outdir .wrangler/custom-code-test && node --test scripts/test-custom-code.mjs"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
@@ -23,6 +24,7 @@
 		"eslint": "^9.33.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-prettier": "^5.5.4",
+		"miniflare": "4.20250813.0",
 		"prettier": "^3.6.2",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",

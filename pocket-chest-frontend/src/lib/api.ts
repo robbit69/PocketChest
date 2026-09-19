@@ -383,7 +383,8 @@ export class PocketChestAPI {
     sessionId: string,
     uploadToken: string,
     fileIds: string[],
-    validityDays: ValidityDays = 7
+    validityDays: ValidityDays = 7,
+    customRetrievalCode?: string
   ): Promise<CompleteUploadResponse> {
     const response = await fetch(`${this.baseUrl}/api/chest/${sessionId}/complete`, {
       method: 'POST',
@@ -393,12 +394,14 @@ export class PocketChestAPI {
       },
       body: JSON.stringify({
         fileIds,
-        validityDays
+        validityDays,
+        customRetrievalCode
       })
     });
 
     if (!response.ok) {
-      throw new Error('无法完成上传');
+      const data = await response.json().catch(() => ({}));
+      throw new Error(errorMessage(data.error, '无法完成上传'));
     }
 
     return response.json();
