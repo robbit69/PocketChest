@@ -48,9 +48,9 @@ export function FileUpload({ onFilesChange, files }: FileUploadProps) {
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 字节';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ['字节', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
@@ -74,8 +74,8 @@ export function FileUpload({ onFilesChange, files }: FileUploadProps) {
         <div className="space-y-2">
           <div className="text-4xl">📁</div>
           <div>
-            <p className="text-lg font-medium">Drop files here or click to browse</p>
-            <p className="text-sm text-gray-500">Select multiple files to share</p>
+            <p className="text-lg font-medium">将文件拖到这里，或点击选择文件</p>
+            <p className="text-sm text-gray-500">支持同时选择多个文件</p>
           </div>
         </div>
         
@@ -90,7 +90,7 @@ export function FileUpload({ onFilesChange, files }: FileUploadProps) {
 
       {files.length > 0 && (
         <div className="mt-4 space-y-2">
-          <h3 className="font-medium">Selected Files ({files.length})</h3>
+          <h3 className="font-medium">已选文件 ({files.length})</h3>
           {files.map((file, index) => (
             <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
               <div className="flex-1 min-w-0">

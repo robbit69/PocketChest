@@ -1,3 +1,4 @@
+import { errorMessage } from '@/lib/error-message';
 import { useState, useCallback } from 'react';
 import { PocketChestAPI } from '@/lib/api';
 import { TextItem, ValidityDays, MultipartUploadProgress, FileUploadProgress } from '@/lib/types';
@@ -45,7 +46,7 @@ export function usePocketChest() {
         uploadedFiles
       };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed';
+      const message = errorMessage(err, '上传失败');
       setError(message);
       throw new Error(message);
     } finally {
@@ -79,7 +80,7 @@ export function usePocketChest() {
         chestToken
       };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Retrieval failed';
+      const message = errorMessage(err, '取件失败');
       setError(message);
       throw new Error(message);
     } finally {
@@ -95,7 +96,7 @@ export function usePocketChest() {
     try {
       await api.downloadFileDirectly(fileId, chestToken, filename);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Download failed';
+      const message = errorMessage(err, '下载失败');
       setError(message);
       throw new Error(message);
     }
@@ -154,7 +155,7 @@ export function usePocketChest() {
         uploadedFiles
       };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed';
+      const message = errorMessage(err, '上传失败');
       setError(message);
       setUploadStatus('error');
       setAbortController(null); // Clear abort controller on error

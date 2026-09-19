@@ -1,3 +1,4 @@
+import { errorMessage } from './error-message';
 import {
   CreateChestResponse,
   UploadResponse,
@@ -21,7 +22,7 @@ export class PocketChestAPI {
     const response = await fetch(`${this.baseUrl}/api/config`);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch server config');
+      throw new Error('无法获取服务配置');
     }
 
     return response.json();
@@ -40,7 +41,7 @@ export class PocketChestAPI {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(error.error || 'Failed to create chest');
+      throw new Error(errorMessage(error.error, '无法创建上传会话'));
     }
 
     return response.json();
@@ -345,15 +346,15 @@ export class PocketChestAPI {
               const result = JSON.parse(xhr.responseText);
               resolve(result);
             } catch (error) {
-              reject(new Error('Failed to parse response'));
+              reject(new Error('无法解析服务器响应'));
             }
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+            reject(new Error(`上传失败，状态码：${xhr.status}`));
           }
         });
         
         xhr.addEventListener('error', () => {
-          reject(new Error('Network error during upload'));
+          reject(new Error('上传时网络连接失败'));
         });
         
         xhr.open('POST', `${this.baseUrl}/api/chest/${sessionId}/upload`);
@@ -372,7 +373,7 @@ export class PocketChestAPI {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to upload files');
+      throw new Error('文件上传失败');
     }
 
     return response.json();
@@ -397,7 +398,7 @@ export class PocketChestAPI {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to complete upload');
+      throw new Error('无法完成上传');
     }
 
     return response.json();
@@ -408,9 +409,9 @@ export class PocketChestAPI {
     
     if (!response.ok) {
       if (response.status === 404) {
-        throw new Error('Retrieval code not found or expired');
+        throw new Error('取件码不存在或已过期');
       }
-      throw new Error('Failed to retrieve chest');
+      throw new Error('无法提取分享内容');
     }
 
     return response.json();
@@ -424,7 +425,7 @@ export class PocketChestAPI {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to download file');
+      throw new Error('文件下载失败');
     }
 
     return response.blob();
@@ -438,7 +439,7 @@ export class PocketChestAPI {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to download text');
+      throw new Error('文字内容下载失败');
     }
 
     return response.text();
@@ -490,7 +491,7 @@ export class PocketChestAPI {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create multipart upload');
+      throw new Error('无法创建分片上传');
     }
 
     return response.json();
@@ -521,15 +522,15 @@ export class PocketChestAPI {
               const result = JSON.parse(xhr.responseText);
               resolve(result);
             } catch (error) {
-              reject(new Error('Failed to parse response'));
+              reject(new Error('无法解析服务器响应'));
             }
           } else {
-            reject(new Error(`Failed to upload part ${partNumber} with status ${xhr.status}`));
+            reject(new Error(`第 ${partNumber} 个分片上传失败，状态码：${xhr.status}`));
           }
         });
         
         xhr.addEventListener('error', () => {
-          reject(new Error(`Network error during part ${partNumber} upload`));
+          reject(new Error(`第 ${partNumber} 个分片上传时网络连接失败`));
         });
         
         xhr.open('PUT', `${this.baseUrl}/api/chest/${sessionId}/multipart/${fileId}/part/${partNumber}`);
@@ -550,7 +551,7 @@ export class PocketChestAPI {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to upload part ${partNumber}`);
+      throw new Error(`第 ${partNumber} 个分片上传失败`);
     }
 
     return response.json();
@@ -572,7 +573,7 @@ export class PocketChestAPI {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to complete multipart upload');
+      throw new Error('无法完成分片上传');
     }
 
     return response.json();

@@ -32,11 +32,15 @@ export function UploadProgress({
 }: UploadProgressProps) {
   if (uploadStatus === 'idle') return null;
 
+  const statusLabels: Record<FileUploadProgress['status'], string> = {
+    waiting: '等待上传', starting: '准备上传', uploading: '正在上传',
+    finalizing: '正在完成', completed: '已完成', error: '失败',
+  };
   const totalItems = files.length + textItems.length;
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 字节';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ['字节', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
@@ -73,16 +77,16 @@ export function UploadProgress({
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {uploadStatus === 'uploading' && '📤 Uploading...'}
-          {uploadStatus === 'success' && '✅ Upload Complete'}
-          {uploadStatus === 'error' && '❌ Upload Failed'}
+          {uploadStatus === 'uploading' && '📤 正在上传…'}
+          {uploadStatus === 'success' && '✅ 上传完成'}
+          {uploadStatus === 'error' && '❌ 上传失败'}
         </h3>
         {onCancel && uploadStatus === 'uploading' && (
           <button
             onClick={onCancel}
             className="text-gray-500 hover:text-gray-700 text-sm"
           >
-            Cancel
+            取消
           </button>
         )}
       </div>
@@ -91,7 +95,7 @@ export function UploadProgress({
       {(uploadStatus === 'uploading' || uploadStatus === 'success') && (
         <div className="mb-4">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>{totalItems} item(s)</span>
+            <span>{totalItems} 项</span>
             <span>
               {uploadStatus === 'success' ? '100%' : `${progress.percentage}%`}
             </span>
@@ -110,8 +114,8 @@ export function UploadProgress({
           </div>
           {progress.total > 0 && (
             <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>{formatFileSize(progress.loaded)} uploaded</span>
-              <span>{formatFileSize(progress.total)} total</span>
+              <span>{formatFileSize(progress.loaded)} 已上传</span>
+              <span>{formatFileSize(progress.total)} 总大小</span>
             </div>
           )}
         </div>
@@ -140,7 +144,7 @@ export function UploadProgress({
                       ? getStatusColor(fileProgressData.status)
                       : 'text-gray-500'
                   }`}>
-                    {fileProgressData?.status || (uploadStatus === 'success' ? 'completed' : 'waiting')}
+                    {statusLabels[fileProgressData?.status || (uploadStatus === 'success' ? 'completed' : 'waiting')]}
                   </span>
                   {fileProgressData && (
                     <span className="text-xs text-gray-500">
@@ -197,10 +201,10 @@ export function UploadProgress({
                   <span className="text-sm font-medium truncate">
                     {item.filename?.endsWith('.txt') 
                       ? item.filename.slice(0, -4) 
-                      : item.filename || `Text ${index + 1}`}
+                      : item.filename || `文字 ${index + 1}`}
                   </span>
-                  <span className="text-xs text-gray-500">({item.content.length} chars)</span>
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">TEXT</span>
+                  <span className="text-xs text-gray-500">({item.content.length} 个字符)</span>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">文字</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-medium capitalize ${
@@ -208,7 +212,7 @@ export function UploadProgress({
                       ? getStatusColor(fileProgressData.status)
                       : 'text-gray-500'
                   }`}>
-                    {fileProgressData?.status || (uploadStatus === 'success' ? 'completed' : 'waiting')}
+                    {statusLabels[fileProgressData?.status || (uploadStatus === 'success' ? 'completed' : 'waiting')]}
                   </span>
                   {fileProgressData && (
                     <span className="text-xs text-gray-500">
@@ -255,22 +259,22 @@ export function UploadProgress({
         <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-red-600">❌</span>
-            <span className="font-medium text-red-900">Upload Failed</span>
+            <span className="font-medium text-red-900">上传失败</span>
           </div>
-          <p className="text-red-700 text-sm mb-3">{error || 'An error occurred during upload'}</p>
+          <p className="text-red-700 text-sm mb-3">{error || '上传时发生错误，请重试'}</p>
           <div className="flex gap-2">
             <button
               onClick={onRetry}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
             >
-              🔄 Retry Upload
+              🔄 重新上传
             </button>
             {onCancel && (
               <button
                 onClick={onCancel}
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm font-medium"
               >
-                Cancel
+                取消
               </button>
             )}
           </div>
@@ -282,10 +286,10 @@ export function UploadProgress({
         <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center gap-2">
             <span className="text-green-600">✅</span>
-            <span className="font-medium text-green-900">Upload Completed Successfully!</span>
+            <span className="font-medium text-green-900">上传成功！</span>
           </div>
           <p className="text-green-700 text-sm mt-1">
-            All {totalItems} item(s) have been uploaded and are ready to share.
+            全部 {totalItems} 项内容已上传，可以开始分享。
           </p>
         </div>
       )}

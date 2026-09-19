@@ -45,9 +45,9 @@ export function TOTPModal({ isOpen, onClose, onSubmit, error, allowCancel = true
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4">
         <div className="text-center mb-6">
           <div className="text-6xl mb-4">🔐</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">需要身份验证</h2>
           <p className="text-gray-600">
-            Enter your 6-digit TOTP code from your authenticator app
+            请输入身份验证器中显示的 6 位动态验证码
           </p>
         </div>
 
@@ -60,7 +60,7 @@ export function TOTPModal({ isOpen, onClose, onSubmit, error, allowCancel = true
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              TOTP Code
+              动态验证码
             </label>
             <input
               type="text"
@@ -74,7 +74,7 @@ export function TOTPModal({ isOpen, onClose, onSubmit, error, allowCancel = true
             />
             <div className="flex justify-between items-center mt-2">
               <p className="text-xs text-gray-500">
-                Check your authenticator app
+                请查看身份验证器中的验证码
               </p>
               <p className={`text-xs ${
                 token.length === 6 ? 'text-green-600' : 'text-gray-400'
@@ -92,7 +92,7 @@ export function TOTPModal({ isOpen, onClose, onSubmit, error, allowCancel = true
                 className="flex-1 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
                 disabled={isSubmitting}
               >
-                Cancel
+                取消
               </button>
             )}
             <button
@@ -103,10 +103,10 @@ export function TOTPModal({ isOpen, onClose, onSubmit, error, allowCancel = true
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="animate-spin text-sm">⏳</div>
-                  Verifying...
+                  正在验证…
                 </span>
               ) : (
-                'Authenticate'
+                '验证'
               )}
             </button>
           </div>
@@ -115,7 +115,7 @@ export function TOTPModal({ isOpen, onClose, onSubmit, error, allowCancel = true
         <div className="mt-6 text-center">
           <div className="bg-blue-50 rounded-lg p-3">
             <p className="text-xs text-blue-700">
-              🔒 This service only accepts uploads from authorized users.
+              🔒 此服务仅允许通过身份验证的用户上传。
             </p>
           </div>
         </div>

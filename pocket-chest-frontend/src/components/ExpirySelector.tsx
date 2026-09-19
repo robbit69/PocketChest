@@ -8,18 +8,18 @@ interface ExpirySelectorProps {
 }
 
 const expiryOptions = [
-  { value: 1 as ValidityDays, label: '1 Day', description: 'Expires tomorrow' },
-  { value: 3 as ValidityDays, label: '3 Days', description: 'Expires in 3 days' },
-  { value: 7 as ValidityDays, label: '1 Week', description: 'Expires in 1 week' },
-  { value: 15 as ValidityDays, label: '2 Weeks', description: 'Expires in 2 weeks' },
-  { value: -1 as ValidityDays, label: 'Permanent', description: 'Never expires' },
+  { value: 1 as ValidityDays, label: '1 天', description: '1 天后到期' },
+  { value: 3 as ValidityDays, label: '3 天', description: '3 天后到期' },
+  { value: 7 as ValidityDays, label: '7 天', description: '7 天后到期' },
+  { value: 15 as ValidityDays, label: '15 天', description: '15 天后到期' },
+  { value: -1 as ValidityDays, label: '永久', description: '永不过期' },
 ];
 
 export function ExpirySelector({ value, onChange }: ExpirySelectorProps) {
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
-        Expiry Time
+        有效期
       </label>
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
         {expiryOptions.map((option) => (

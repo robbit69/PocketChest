@@ -8,6 +8,7 @@ import { ExpirySelector } from '@/components/ExpirySelector';
 import { TOTPModal } from '@/components/TOTPModal';
 import { UploadProgress } from '@/components/UploadProgress';
 import { usePocketChest } from '@/hooks/usePocketChest';
+import { errorMessage } from '@/lib/error-message';
 import { PocketChestAPI } from '@/lib/api';
 import { TextItem, ValidityDays } from '@/lib/types';
 
@@ -82,7 +83,7 @@ export default function SharePage() {
       setIsAuthenticated(true);
       setShowTOTPModal(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Authentication failed';
+      const message = errorMessage(error, '身份验证失败');
       setTotpError(message);
       throw error; // Re-throw to let modal handle UI state
     } finally {
@@ -101,12 +102,12 @@ export default function SharePage() {
 
   const handleUpload = async () => {
     if (files.length === 0 && textItems.length === 0) {
-      alert('Please add files or text to share');
+      alert('请先添加要分享的文件或文字');
       return;
     }
 
     if (!sessionData) {
-      alert('Session not ready. Please try again.');
+      alert('上传尚未准备好，请稍后重试。');
       return;
     }
     
@@ -174,10 +175,10 @@ export default function SharePage() {
         <div className="max-w-2xl mx-auto px-4">
           <div className="text-center mb-8">
             <Link href="/" className="text-blue-600 hover:text-blue-800 text-sm">
-              ← Back to Home
+              ← 返回首页
             </Link>
-            <h1 className="text-4xl font-bold text-gray-900 mt-4 mb-2">📤 Share Files & Text</h1>
-            <p className="text-xl text-gray-600">Upload files or text to get a shareable code</p>
+            <h1 className="text-4xl font-bold text-gray-900 mt-4 mb-2">📤 分享文件与文字</h1>
+            <p className="text-xl text-gray-600">上传文件或文字，生成取件码即可分享</p>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-8">
@@ -186,21 +187,21 @@ export default function SharePage() {
                 {!configLoaded ? '🎯' : (requireTOTP ? '🔐' : '⏳')}
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                {!configLoaded ? 'Opening the Chest...' : (requireTOTP ? 'Authentication Required' : 'Preparing Session')}
+                {!configLoaded ? '正在加载…' : (requireTOTP ? '需要身份验证' : '正在准备上传')}
               </h2>
               <p className="text-gray-600 mb-6">
                 {!configLoaded
-                  ? 'Checking what treasures await inside! 🗝️✨'
+                  ? '正在连接分享服务，请稍候…'
                   : (requireTOTP 
-                    ? 'Please authenticate with your TOTP code to proceed'
-                    : 'Setting up your upload session...'
+                    ? '请输入身份验证器中的动态验证码以继续'
+                    : '正在准备上传，请稍候…'
                   )
                 }
               </p>
               {isAuthenticating && (
                 <div className="flex items-center justify-center gap-2">
                   <div className="animate-spin text-xl">⏳</div>
-                  <span>Authenticating...</span>
+                  <span>正在验证…</span>
                 </div>
               )}
             </div>
@@ -225,19 +226,19 @@ export default function SharePage() {
         <div className="max-w-2xl mx-auto px-4">
           <div className="text-center mb-8">
             <Link href="/" className="text-blue-600 hover:text-blue-800 text-sm">
-              ← Back to Home
+              ← 返回首页
             </Link>
-            <h1 className="text-4xl font-bold text-gray-900 mt-4 mb-2">Upload Successful!</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mt-4 mb-2">上传成功！</h1>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-8">
             <div className="text-center">
               <div className="text-8xl mb-6">✅</div>
-              <h2 className="text-3xl font-bold text-green-700 mb-4">Files Shared Successfully</h2>
-              <p className="text-gray-600 mb-8 text-lg">Your files are uploaded and ready to share!</p>
+              <h2 className="text-3xl font-bold text-green-700 mb-4">分享成功</h2>
+              <p className="text-gray-600 mb-8 text-lg">文件已上传，将取件码分享给对方即可。</p>
               
               <div className="bg-gray-50 rounded-lg p-6 mb-8">
-                <p className="text-sm text-gray-600 mb-3 font-medium">Share this retrieval code:</p>
+                <p className="text-sm text-gray-600 mb-3 font-medium">分享此取件码：</p>
                 <div className="flex items-center justify-center gap-3 mb-4">
                   <code className="text-3xl font-mono font-bold text-blue-600 bg-white px-6 py-3 rounded-lg border-2 border-blue-200">
                     {uploadResult}
@@ -249,13 +250,13 @@ export default function SharePage() {
                         ? 'text-green-600 bg-green-50 border-green-200'
                         : 'text-blue-600 hover:bg-blue-50 border-blue-200 hover:border-blue-300'
                     }`}
-                    title="Copy to clipboard"
+                    title="复制取件码"
                   >
                     {copied ? '✓' : '📋'}
                   </button>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Recipients can use this code at {window.location.origin}/retrieve
+                  对方可在此地址输入取件码： {window.location.origin}/retrieve
                 </p>
               </div>
               
@@ -267,13 +268,13 @@ export default function SharePage() {
                   }}
                   className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold"
                 >
-                  Share More Files
+                  继续分享
                 </button>
                 <Link 
                   href="/"
                   className="block w-full py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold text-center"
                 >
-                  Back to Home
+                  返回首页
                 </Link>
               </div>
             </div>
@@ -288,10 +289,10 @@ export default function SharePage() {
       <div className="max-w-3xl mx-auto px-4">
         <div className="text-center mb-8">
           <Link href="/" className="text-blue-600 hover:text-blue-800 text-sm">
-            ← Back to Home
+            ← 返回首页
           </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mt-4 mb-2">📤 Share Files & Text</h1>
-          <p className="text-xl text-gray-600">Upload files or text to get a shareable code</p>
+          <h1 className="text-4xl font-bold text-gray-900 mt-4 mb-2">📤 分享文件与文字</h1>
+          <p className="text-xl text-gray-600">上传文件或文字，生成取件码即可分享</p>
         </div>
 
         {error && (
@@ -322,13 +323,13 @@ export default function SharePage() {
           <div className="space-y-8">
             {/* Text Section */}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">📝 Text Content</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">📝 文字内容</h2>
               <TextInput textItems={textItems} onTextItemsChange={setTextItems} />
             </div>
             
             {/* Files Section */}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">📁 Files</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">📁 文件</h2>
               <FileUpload files={files} onFilesChange={setFiles} />
             </div>
             
@@ -342,10 +343,10 @@ export default function SharePage() {
               {isUploading ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="animate-spin text-xl">⏳</div>
-                  Uploading...
+                  正在上传…
                 </span>
               ) : (
-                'Upload & Generate Code'
+                '上传并生成取件码'
               )}
             </button>
           </div>
