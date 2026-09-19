@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { HomeSiteInfo } from '@/components/HomeSiteInfo';
 
 export default function Home() {
   return (
@@ -39,6 +40,8 @@ export default function Home() {
             </div>
           </Link>
         </div>
+
+        <HomeSiteInfo />
 
         <div className="mt-12 text-center">
           <p className="text-gray-500 text-sm">

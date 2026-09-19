@@ -81,13 +81,22 @@ test('simultaneous attempts at the same code have exactly one winner', async () 
   assert.equal((await complete(loser, 'AFTER_CONFLICT')).status, 200);
 });
 
-test('invalid format and non-string values do not publish a session', async () => {
+test('four-character codes work and invalid format or non-string values do not publish a session', async () => {
   const session = await draft();
   for (const value of ['abc', 'a'.repeat(33), 'hello world', 'hello/there', '中文取件码测试', 123456, null]) {
     assert.equal((await complete(session, value)).status, 400);
     await unpublished(session);
   }
-  assert.equal((await complete(session, 'A'.repeat(32))).status, 200);
+  assert.equal((await complete(session, 'A1_B')).status, 200);
+});
+
+test('config reports the site storage usage and capacity', async () => {
+  const response = await mf.dispatchFetch('http://localhost/api/config');
+  assert.equal(response.status, 200);
+  const config = await response.json();
+  assert.equal(config.requireTOTP, false);
+  assert.equal(typeof config.storageUsedBytes, 'number');
+  assert.equal(config.storageCapacityBytes, 10 * 1024 * 1024 * 1024);
 });
 
 test('omitted or blank code keeps six-character automatic codes and old retrieval behavior', async () => {

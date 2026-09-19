@@ -299,7 +299,7 @@ export function isValidUUID(uuid: string): boolean {
 
 // Validate retrieval code format
 export function isValidRetrievalCode(code: string): boolean {
-	const codeRegex = /^[A-Z0-9_-]{6,32}$/;
+	const codeRegex = /^[A-Z0-9_-]{4,32}$/;
 	return codeRegex.test(code);
 }
 

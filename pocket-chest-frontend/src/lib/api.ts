@@ -11,6 +11,7 @@ import {
   UploadPart,
   MultipartUploadProgress,
   FileUploadProgress,
+  ConfigResponse,
 } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -18,7 +19,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 export class PocketChestAPI {
   constructor(private baseUrl: string = API_BASE_URL) {}
 
-  async getConfig(): Promise<{ requireTOTP: boolean }> {
+  async getConfig(): Promise<ConfigResponse> {
     const response = await fetch(`${this.baseUrl}/api/config`);
     
     if (!response.ok) {

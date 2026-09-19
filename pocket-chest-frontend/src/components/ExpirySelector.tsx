@@ -39,6 +39,7 @@ export function ExpirySelector({ value, onChange }: ExpirySelectorProps) {
           </button>
         ))}
       </div>
+      <p className="text-sm text-amber-700">容量达到上限后，站主会手动删除。</p>
     </div>
   );
 }

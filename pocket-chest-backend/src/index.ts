@@ -120,13 +120,18 @@ export default {
 
 // GET /api/config - Get server configuration
 async function handleGetConfig(env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+	const storage = await env.DB.prepare(`
+		SELECT COALESCE(SUM(file_size), 0) AS used_bytes FROM files
+	`).first<{ used_bytes: number }>();
 	const config = {
 		requireTOTP: env.REQUIRE_TOTP === 'true',
+		storageUsedBytes: Number(storage?.used_bytes ?? 0),
+		storageCapacityBytes: 10 * 1024 * 1024 * 1024,
 	};
 
 	return new Response(JSON.stringify(config), {
 		status: 200,
-		headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+		headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 	});
 }
 
@@ -352,7 +357,7 @@ async function handleCompleteUpload(request: Request, env: Env, sessionId: strin
 	}
 	const customCode = body.customRetrievalCode?.trim().toUpperCase() || '';
 	if (customCode && !isValidRetrievalCode(customCode)) {
-		return jsonError('取件码需为 6–32 位字母、数字、短横线或下划线。', 400);
+		return jsonError('取件码需为 4–32 位字母、数字、短横线或下划线。', 400);
 	}
 	const { fileIds, validityDays } = body;
 	// Validate ownership before publishing any content.

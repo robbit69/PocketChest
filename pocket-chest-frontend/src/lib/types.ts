@@ -4,6 +4,12 @@ export interface CreateChestResponse {
   expiresIn: number;
 }
 
+export interface ConfigResponse {
+  requireTOTP: boolean;
+  storageUsedBytes: number;
+  storageCapacityBytes: number;
+}
+
 export interface UploadedFile {
   fileId: string;
   filename: string;
